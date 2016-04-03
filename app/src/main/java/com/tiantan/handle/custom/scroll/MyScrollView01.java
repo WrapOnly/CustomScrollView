@@ -24,7 +24,7 @@ public class MyScrollView01 extends ViewGroup {
     private int currentId = 0;
     //down事件时的x坐标
     private int firstX = 0;
-
+    private int firstY = 0;
     private MyScrollerUtil myScrollerUtil;
     /**
      * 系统的动画加速
@@ -35,6 +35,7 @@ public class MyScrollView01 extends ViewGroup {
     private boolean isFling;
 
     private IMyPageChangedListener iMyPageChangedListener;
+
 
     public MyScrollView01(Context context) {
         super(context);
@@ -124,7 +125,7 @@ public class MyScrollView01 extends ViewGroup {
             /**
              * 父View会根据子View的需求，和自身的情况，来综合确定子View的位置，(确定它的大小)
              */
-            subView.layout(i*this.getWidth(), 0, this.getWidth() + i*this.getWidth(), this.getHeight());
+            subView.layout(i * this.getWidth(), 0, this.getWidth() + i * this.getWidth(), this.getHeight());
 
             //subView.getWidth();//得到View的真实大小；
 
@@ -145,6 +146,61 @@ public class MyScrollView01 extends ViewGroup {
             view.measure(widthMeasureSpec, heightMeasureSpec);
             view.getMeasuredWidth();//得到计算后的大小
         }
+    }
+
+    /**
+     * 事件传递机制：
+     * 1.View执行dispatchTouchEvent方法，开始分发事件。
+     * 2.执行onInterceptTouchEvent 判断是否中断事件。
+     * 3.执行onTouchEvent方法，去处理事件。
+     */
+    /**
+     * 分发事件的方法，最早执行，并且不可以随意改动。
+     */
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        return super.dispatchTouchEvent(ev);
+    }
+
+    /**
+     * 执行onInterceptTouchEvent之前有个dispatchTouchEvent事件。
+     * 是否中断事件的传递
+     * @param ev
+     * @return 返回true的时候中断事件，执行自己的onTouchEvent方法。返回false的时候，默认处理，不中断，也不会执行自己的onTouchEvent方法。
+     */
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        boolean result = false;
+        switch (ev.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                /**
+                 * 解决拖动时，图片跳动的BUG。
+                 */
+                gestureDetector.onTouchEvent(ev);
+
+                firstX = (int) ev.getX();
+                firstY = (int) ev.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+
+                //手指在屏幕上水平位移的绝对值
+                int distanceX = (int) Math.abs(ev.getX() - firstX);
+                //手指在屏幕上竖直位移的绝对值
+                int distanceY = (int) Math.abs(ev.getY() - firstY);
+
+                if (distanceX > distanceY && distanceX > 10){//distance>10是为了防止手指抖动触发的事件
+                    result = true;
+                }
+                else {
+                    result = false;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+            default:
+                break;
+        }
+        return result;
     }
 
     @Override
